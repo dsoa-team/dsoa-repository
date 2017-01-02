@@ -1,0 +1,120 @@
+grammar br.ufpe.cin.dsoa.ide.Dsoa with org.eclipse.xtext.common.Terminals
+
+generate dsoa "http://www.ufpe.br/cin/dsoa/ide/Dsoa"
+
+Specification
+	:	library = Library? repository = Repository?
+	;
+
+/*---------------------------------------------------------------------------*/
+Library
+	:	'library' name = ID (units += Unit | categories += Category | attributes += Attribute | metrics += Metric)*
+	;
+
+Unit
+	:	'unit' name = ID ('is' unit = [Unit] ('*' | '/') conversionFactor = INT)?
+	;
+	
+Category
+	:	'category' name = ID 
+	;
+	
+Attribute
+	:	'attribute' name = ID 'is' 'member' 'of' category = [Category] 
+	;
+
+
+Metric
+	:	'metric' name = ID 'is' 'measured' 'in' unit = [Unit]
+	;
+/*---------------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------------*/
+Repository
+	:	'repository' name = ID (interfaces += Interface | components += Component | units += Unit)*
+	;
+	
+Interface
+	:	'interface' name = ID (operations += Operation)+
+	;
+
+Operation
+	:	((type = Type)? | 'void') name = ID 
+			'(' 
+				(parameters += Parameter (',' parameters += Parameter)*)?
+			')'
+	;
+
+Parameter
+	:	type = Type name = ID
+	;
+	
+Type
+	:	'int' | 'double' | 'string'
+	;
+
+Component
+	:	'component' name = ID (requiredPorts += RequiredPort | providedPorts += ProvidedPort)+ 
+	;
+
+RequiredPort
+	:	'requires' port = Port
+	;
+
+ProvidedPort
+	: 	'provides' port = Port
+	;
+
+Port
+	:	name = ID multiplicity = Multiplicity ':' interface = [Interface] ('constrained' 'by' constraint = BooleanExpression)?		
+	;
+	
+Multiplicity returns BaseMultiplicity
+	:	Unique ('..' {Multiplicity.lower = current} upper = INT)?
+	;
+	
+Unique
+	: value = INT
+	;	
+	
+BooleanExpression
+	:	left = OrOperand ('or' right = OrOperand)?
+	;
+	
+OrOperand
+	:	left = AndOperand ('and' right = AndOperand)?
+	;	
+	
+AndOperand
+	:	'(' BooleanExpression ')'
+	|	Comparison
+	;
+
+Comparison
+	:	metric = [Metric] operator = COMPARISON_OPERATOR threshold = INT unit = [Unit] 
+	|	threshold = INT unit = [Unit] operator = COMPARISON_OPERATOR metric = [Metric]
+	;	
+	
+terminal COMPARISON_OPERATOR
+	: '<' | '<=' | '=' | '>' | '>='
+	;
+
+/*
+ * 
+repository AplicacaoExemplo
+
+
+interface InterfaceExemplo1 {
+	int operacao1(int a, double b, string c)
+	bool operacao2()
+}
+* 
+* component ComponenteExemplo1
+	port porta1 requires InterfaceExemplo1 constrained by atributos
+
+* 
+* 
+* 
+*
+*/
+/*---------------------------------------------------------------------------*/
